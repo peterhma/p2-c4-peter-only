@@ -1,0 +1,214 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  	<title>P3 Coloring</title>
+
+	<script type="text/javascript" src="{% static 'coloring/vendors/jquery/jquery-3.3.1.min.js' %}"></script>
+	<script type="text/javascript" src="{% static 'coloring/vendors/paper/paper-full.min.js' %}"></script>
+
+
+	<style type="text/css">
+		#color-palette {
+			width: 300px;
+			background-color: #f1f1f1;
+			display: flex;
+			flex-wrap: wrap;
+			position: absolute;
+			top: 0;
+		}
+
+    	#color-selector-menu {
+			width: 750px;
+			background-color: #f1f1f1;
+			display: flex;
+			flex-wrap: wrap;
+			position: absolute;
+			bootom: 0;
+		}
+
+		.roundSwatch {
+			width: 24px;
+			height: 30px;
+			-moz-border-radius: 12px;
+			-webkit-border-radius: 12px;
+			border-radius: 12px;
+			margin: 3px;
+		}
+    .rectangleSwatch {
+			width: 50px;
+			height: 75px;
+			-moz-border-radius: 2px;
+			-webkit-border-radius: 2px;
+			border-radius: 2px;
+			margin: 3px;
+		}
+
+		#myCanvas {
+			padding-left: 0;
+		  padding-right: 0;
+		  margin-left: auto;
+		  margin-right: auto;
+		  display: block;
+    }
+    .buttonSelected {
+      background-color: #d6d6d6; /* Light Grey */
+    }
+
+    .buttonSelected {
+      background-color: #b3b3b3; /* Darker Grey */
+    }
+
+		
+	</style>
+
+	<script type="text/javascript" canvas="canvas">
+		window.onload = function() {
+			var canvas = document.getElementById('myCanvas');
+
+			// coloring page
+			var mandala = {
+				item: null,
+				lastClicked: null,
+				filePath: "{% static 'coloring/images/mandala-freepik.svg' %}"
+			};
+
+			// color palette
+			var cp = {
+				history: ["#000000"], // black selected by default
+				options: [],
+				$container: $('#color-palette')
+			}
+
+      // color palette
+			var m = {
+        history: ["#000000"], // black selected by default
+				options: [],
+				$container: $('#color-selector-menu')
+			}
+
+     
+			function myCustomInteraction() {
+ 
+
+        var eyedropperButton = document.getElementById('eyedropper-button')
+
+        eyedropperButton.click(function() { //PICK EYEDROPPER
+          eyedropperButton.css("background-color", "red");
+        });
+
+				var tool = new paper.Tool();
+      
+				tool.onMouseDown = function (event) {
+				    var hit = mandala.item.hitTest(event.point, { tolerance: 10, fill: true });
+				    if (hit) {
+				    		// Color pallette keeps track of the full history of colors, though we
+				    		// only color in with the most-recent color.
+				        hit.item.fillColor = m.history[m.history.length - 1];
+				    }
+				}
+			}
+
+      	function createColorPalette(colors){
+          // create a swatch for each color
+          for (var i = colors.length - 1; i >= 0; i--) {
+            var $rectangleSwatch = $("<div>").css("background-color", colors[i])
+                      .addClass("rectangleSwatch");
+            $rectangleSwatch.click(function(){
+              // add color to the color palette history
+                m.history.push($(this).css("background-color"));
+            });
+            m.$container.append($rectangleSwatch);
+          }
+        }
+
+
+          function createSameColorPalette(colors){
+          // create a swatch for each color
+          for (var i = colors.length - 1; i >= 0; i--) {
+
+            var $roundSwatch = $("<div>").css("background-color", colors[i])
+                      .addClass("roundSwatch");
+            $roundSwatch.click(function(){
+              // add color to the color palette history
+                cp.history.push($(this).css("background-color"));
+            });
+            cp.$container.append($roundSwatch);
+          }
+
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.innerHTML = 'Pencil';
+          button.className = 'button';
+          button.id = 'pencil-button';
+    
+          var container = document.getElementById('color-selector-menu');
+          container.appendChild(button);
+			}
+
+			// loads a set of colors from a json to create a color palette
+
+      var colorFamily = {}
+
+			function getColorsCreatePalette(){
+
+				m.$container.html(" ");
+        console.log("in function")
+				$.getJSON("{% static 'coloring/vendors/material/material-colors.json' %}", function(colors){
+          console.log("here")
+					var keys = Object.keys(colors);
+          console.log(keys)
+					for (var i = keys.length - 1; i >= 0; i--) {
+            colorFamily[keys[i]] = [];
+						m.options.push(colors[keys[i]][500]);
+          for (const [key, value] of Object.entries(colors[keys[i]])){
+            colorFamily[keys[i]].push(value);
+          }
+
+					}
+					createColorPalette(m.options);
+          console.log(colorFamily);
+          createSameColorPalette(colorFamily["red"]);
+				});
+
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.innerHTML = 'Eyedropper';
+        button.className = 'button';
+        button.id = 'eyedropper-button';
+        var container = document.getElementById('color-selector-menu');
+        container.appendChild(button);
+
+			}
+
+
+			function init(custom){
+				paper.setup(canvas);
+				getColorsCreatePalette();
+
+				paper.project.importSVG(mandala.filePath, function(item) {
+					mandala.item = item._children["design-freepik"];
+				    paper.project.insertLayer(0,mandala.item);
+
+				    if (custom) {
+				    	myCustomInteraction();
+				    } else {
+				    	myGradientInteraction();
+				    }
+
+				});
+			}
+			init(true);
+		}
+	</script>
+</head>
+<body>
+
+	<canvas id="myCanvas" width="750px" height="1100px"></canvas>
+	<div id="color-palette"></div>
+  <div id= "color-selector-menu">
+  </div>
+</body>
+</html>
