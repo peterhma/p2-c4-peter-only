@@ -67,7 +67,6 @@
 	<script type="text/javascript" canvas="canvas">
 		window.onload = function() {
 			var canvas = document.getElementById('myCanvas');
-
 			// coloring page
 			var mandala = {
 				item: null,
@@ -89,24 +88,24 @@
 				$container: $('#color-selector-menu')
 			}
 
-     
+      var canColor = 1;
 			function myCustomInteraction() {
- 
-
-        var eyedropperButton = document.getElementById('eyedropper-button')
-
-        eyedropperButton.click(function() { //PICK EYEDROPPER
-          eyedropperButton.css("background-color", "red");
-        });
 
 				var tool = new paper.Tool();
       
 				tool.onMouseDown = function (event) {
 				    var hit = mandala.item.hitTest(event.point, { tolerance: 10, fill: true });
 				    if (hit) {
+              
 				    		// Color pallette keeps track of the full history of colors, though we
 				    		// only color in with the most-recent color.
-				        hit.item.fillColor = m.history[m.history.length - 1];
+                if (canColor) {
+                    hit.item.fillColor = m.history[m.history.length - 1];
+                }
+                else {
+                  m.history.push(hit.item.fillColor);
+                }
+				          
 				    }
 				}
 			}
@@ -143,9 +142,20 @@
           button.innerHTML = 'Pencil';
           button.className = 'button';
           button.id = 'pencil-button';
-    
+          button.style.background = 'grey'
           var container = document.getElementById('color-selector-menu');
           container.appendChild(button);
+
+          button.addEventListener("click", selectPencil);
+
+          function selectPencil() {
+            $(this).css("background", "grey");
+            document.getElementById('eyedropper-button').style.background="white";
+            // $(this).removeClass('disabled');
+            // $(this).addClass('selected');
+            // $(document.getElementById('eyedropper-button')).addClass('disabled');
+            canColor = 1;
+        }
 			}
 
 			// loads a set of colors from a json to create a color palette
@@ -157,19 +167,18 @@
 				m.$container.html(" ");
         console.log("in function")
 				$.getJSON("{% static 'coloring/vendors/material/material-colors.json' %}", function(colors){
-          console.log("here")
+          //console.log("here")
 					var keys = Object.keys(colors);
-          console.log(keys)
+          //console.log(keys)
 					for (var i = keys.length - 1; i >= 0; i--) {
             colorFamily[keys[i]] = [];
 						m.options.push(colors[keys[i]][500]);
-          for (const [key, value] of Object.entries(colors[keys[i]])){
-            colorFamily[keys[i]].push(value);
-          }
-
+            for (const [key, value] of Object.entries(colors[keys[i]])){
+              colorFamily[keys[i]].push(value);
+            }
 					}
 					createColorPalette(m.options);
-          console.log(colorFamily);
+          //console.log(colorFamily);
           createSameColorPalette(colorFamily["red"]);
 				});
 
@@ -177,10 +186,21 @@
         button.type = 'button';
         button.innerHTML = 'Eyedropper';
         button.className = 'button';
-        button.id = 'eyedropper-button';
+        button.setAttribute('id','eyedropper-button');
         var container = document.getElementById('color-selector-menu');
         container.appendChild(button);
 
+        button.addEventListener("click", selectEyedropper);
+
+        function selectEyedropper() {
+          $(this).css("background", "grey");
+          document.getElementById('pencil-button').style.background="white";
+          // $(this).removeClass('disabled');
+          // $(this).addClass('selected');
+          // $(document.getElementById('pencil-button')).addClass('disabled');
+          canColor = 0;
+        }
+        
 			}
 
 
